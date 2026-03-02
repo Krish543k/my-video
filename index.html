@@ -319,6 +319,98 @@
             display: none;
             z-index: 2000;
         }
+
+        /* Video Navigation Controls */
+        .video-controls {
+            position: fixed;
+            bottom: 80px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            gap: 15px;
+            z-index: 100;
+            background: rgba(0, 0, 0, 0.8);
+            padding: 15px 25px;
+            border-radius: 50px;
+            backdrop-filter: blur(10px);
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+        }
+
+        .nav-btn {
+            background: rgba(255, 255, 255, 0.9);
+            border: none;
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            font-size: 24px;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #000;
+            font-weight: bold;
+        }
+
+        .nav-btn:hover {
+            background: white;
+            transform: scale(1.1);
+        }
+
+        .nav-btn:active {
+            transform: scale(0.95);
+            background: #667eea;
+            color: white;
+        }
+
+        .video-counter {
+            color: white;
+            font-size: 16px;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            padding: 0 15px;
+            white-space: nowrap;
+        }
+
+        /* Mobile responsive for video controls */
+        @media (max-width: 768px) {
+            .video-controls {
+                bottom: 60px;
+                padding: 12px 20px;
+                gap: 12px;
+            }
+
+            .nav-btn {
+                width: 45px;
+                height: 45px;
+                font-size: 20px;
+            }
+
+            .video-counter {
+                font-size: 14px;
+                padding: 0 10px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .video-controls {
+                bottom: 50px;
+                padding: 10px 15px;
+                gap: 10px;
+            }
+
+            .nav-btn {
+                width: 40px;
+                height: 40px;
+                font-size: 18px;
+            }
+
+            .video-counter {
+                font-size: 12px;
+                padding: 0 8px;
+            }
+        }
     </style>
 </head>
 <body>
@@ -337,23 +429,26 @@
     <div id="videoContainer">
         <!-- 
             ================================================
-            VIDEO FILE KA NAAM YAHAN CHANGE KARO (Line 93)
+            VIDEO FILES KE NAAM SCRIPT SECTION MEIN SET KAREIN
             ================================================
             
-            Default: video.mp4
+            3 Videos: video1.mp4, video2.mp4, video3.mp4
             
-            Agar aapki video ka naam alag hai:
-            - "myvideo.mp4" hai to: src="myvideo.mp4"
-            - "demo.mp4" hai to: src="demo.mp4"
-            - "product.mp4" hai to: src="product.mp4"
+            Aap script section mein videos array mein change kar sakte ho
             
             ================================================
         -->
-        <video id="myVideo" controls loop playsinline preload="auto" webkit-playsinline x5-playsinline>
-            <source src="video.mp4" type="video/mp4">
-            <source src="video.webm" type="video/webm">
+        <video id="myVideo" controls playsinline preload="auto" webkit-playsinline x5-playsinline>
+            <source src="video1.mp4" type="video/mp4">
             Your browser does not support the video tag.
         </video>
+
+        <!-- Video Navigation Controls -->
+        <div class="video-controls">
+            <button class="nav-btn" onclick="previousVideo()" title="Previous Video">◀</button>
+            <div class="video-counter" id="videoCounter">Video 1 of 3</div>
+            <button class="nav-btn" onclick="nextVideo()" title="Next Video">▶</button>
+        </div>
     </div>
 
     <div class="play-overlay" id="playOverlay">
@@ -372,6 +467,17 @@
         const correctPassword = "1234"; // Password: 1234
         // ================================================
 
+        // ================================================
+        // MULTIPLE VIDEOS YAHAN ADD KARO
+        // ================================================
+        const videos = [
+            "video1.mp4",  // Pehli video
+            "video2.mp4",  // Dusri video
+            "video3.mp4"   // Teesri video
+        ];
+        // ================================================
+
+        let currentVideoIndex = 0;
         const video = document.getElementById('myVideo');
         const overlay = document.getElementById('playOverlay');
         const errorMessage = document.getElementById('errorMessage');
@@ -379,6 +485,65 @@
         const passwordInput = document.getElementById('passwordInput');
         const passwordError = document.getElementById('passwordError');
         let playAttempted = false;
+
+        // Load video by index
+        function loadVideo(index) {
+            if (index >= 0 && index < videos.length) {
+                currentVideoIndex = index;
+                const videoElement = document.getElementById('myVideo');
+                
+                // Update video source
+                videoElement.src = videos[index];
+                videoElement.load();
+                
+                // Update counter
+                updateVideoCounter();
+                
+                // Auto-play the new video
+                videoElement.muted = false;
+                videoElement.volume = 1.0;
+                videoElement.play().catch(e => {
+                    console.log('Play error on video switch:', e);
+                    // If autoplay fails, try muted
+                    videoElement.muted = true;
+                    videoElement.play().then(() => {
+                        // Show unmute option
+                        setTimeout(() => {
+                            videoElement.muted = false;
+                            videoElement.volume = 1.0;
+                        }, 100);
+                    });
+                });
+            }
+        }
+
+        // Next video
+        function nextVideo() {
+            if (currentVideoIndex < videos.length - 1) {
+                loadVideo(currentVideoIndex + 1);
+            } else {
+                // Loop back to first video
+                loadVideo(0);
+            }
+        }
+
+        // Previous video
+        function previousVideo() {
+            if (currentVideoIndex > 0) {
+                loadVideo(currentVideoIndex - 1);
+            } else {
+                // Go to last video
+                loadVideo(videos.length - 1);
+            }
+        }
+
+        // Update video counter
+        function updateVideoCounter() {
+            const counter = document.getElementById('videoCounter');
+            if (counter) {
+                counter.textContent = `Video ${currentVideoIndex + 1} of ${videos.length}`;
+            }
+        }
 
         // Check password function
         function checkPassword() {
@@ -389,6 +554,9 @@
                 passwordScreen.classList.add('hidden');
                 passwordInput.value = '';
                 passwordError.textContent = '';
+                
+                // Load first video
+                loadVideo(0);
                 
                 // Start video after password
                 setTimeout(() => {
