@@ -563,16 +563,34 @@
                 passwordInput.value = '';
                 passwordError.textContent = '';
                 
-                // Load first video
-                loadVideo(0);
-                
-                // Hide overlay immediately after password
+                // Hide overlay immediately
                 overlay.classList.add('hidden');
                 
-                // Start video after password
-                setTimeout(() => {
-                    attemptPlay();
-                }, 500);
+                // Load and play first video immediately
+                const videoElement = document.getElementById('myVideo');
+                videoElement.src = videos[0];
+                currentVideoIndex = 0;
+                updateVideoCounter();
+                
+                // Play with sound
+                videoElement.muted = false;
+                videoElement.volume = 1.0;
+                videoElement.play().catch(e => {
+                    console.log('Autoplay blocked, trying muted:', e);
+                    // If blocked, play muted then unmute
+                    videoElement.muted = true;
+                    videoElement.play().then(() => {
+                        // Unmute after starting
+                        setTimeout(() => {
+                            videoElement.muted = false;
+                            videoElement.volume = 1.0;
+                        }, 100);
+                    }).catch(err => {
+                        // If still fails, show overlay
+                        console.log('Play failed:', err);
+                        overlay.classList.remove('hidden');
+                    });
+                });
             } else {
                 // Wrong password
                 passwordError.textContent = '❌ Wrong password! Try again...';
@@ -675,19 +693,31 @@
             console.log('Video can play');
         });
 
-        // Try to play on any user interaction
-        document.addEventListener('click', function() {
-            if (!playAttempted && video.paused) {
-                attemptPlay();
+        // Try to play on any user interaction (for mobile)
+        document.addEventListener('click', function playOnInteraction() {
+            if (video.paused && !passwordScreen.classList.contains('hidden')) {
+                // Don't play before password
+                return;
             }
-        }, { once: true });
+            if (video.paused) {
+                video.muted = false;
+                video.volume = 1.0;
+                video.play().catch(e => console.log('Click play error:', e));
+            }
+        });
 
         // Mobile touch support
-        document.addEventListener('touchstart', function() {
-            if (!playAttempted && video.paused) {
-                attemptPlay();
+        document.addEventListener('touchstart', function playOnTouch() {
+            if (video.paused && !passwordScreen.classList.contains('hidden')) {
+                // Don't play before password
+                return;
             }
-        }, { once: true });
+            if (video.paused) {
+                video.muted = false;
+                video.volume = 1.0;
+                video.play().catch(e => console.log('Touch play error:', e));
+            }
+        });
     </script>
 </body>
 </html>
