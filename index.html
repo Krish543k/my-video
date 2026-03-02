@@ -485,12 +485,16 @@
         const passwordInput = document.getElementById('passwordInput');
         const passwordError = document.getElementById('passwordError');
         let playAttempted = false;
+        let videoLoadFailed = false;
 
         // Load video by index
         function loadVideo(index) {
             if (index >= 0 && index < videos.length) {
                 currentVideoIndex = index;
                 const videoElement = document.getElementById('myVideo');
+                
+                // Reset error flag
+                videoLoadFailed = false;
                 
                 // Update video source
                 videoElement.src = videos[index];
@@ -499,21 +503,25 @@
                 // Update counter
                 updateVideoCounter();
                 
-                // Auto-play the new video
-                videoElement.muted = false;
-                videoElement.volume = 1.0;
-                videoElement.play().catch(e => {
-                    console.log('Play error on video switch:', e);
-                    // If autoplay fails, try muted
-                    videoElement.muted = true;
-                    videoElement.play().then(() => {
-                        // Show unmute option
-                        setTimeout(() => {
-                            videoElement.muted = false;
-                            videoElement.volume = 1.0;
-                        }, 100);
-                    });
-                });
+                // Wait a bit for video to load, then try to play
+                setTimeout(() => {
+                    if (!videoLoadFailed) {
+                        videoElement.muted = false;
+                        videoElement.volume = 1.0;
+                        videoElement.play().catch(e => {
+                            console.log('Play error on video switch:', e);
+                            // If autoplay fails, try muted
+                            videoElement.muted = true;
+                            videoElement.play().then(() => {
+                                // Show unmute option
+                                setTimeout(() => {
+                                    videoElement.muted = false;
+                                    videoElement.volume = 1.0;
+                                }, 100);
+                            });
+                        });
+                    }
+                }, 300);
             }
         }
 
@@ -649,12 +657,17 @@
         // Show error if video fails to load
         video.addEventListener('error', function(e) {
             console.error('Video error:', e);
-            errorMessage.textContent = `Video file nahi mili! "${videos[currentVideoIndex]}" upload karein.`;
+            videoLoadFailed = true;
+            errorMessage.textContent = `Video "${videos[currentVideoIndex]}" load nahi ho rahi. Agli video try karein.`;
             errorMessage.style.display = 'block';
             
             setTimeout(() => {
                 errorMessage.style.display = 'none';
-            }, 5000);
+                // Auto-skip to next video if current fails
+                if (currentVideoIndex < videos.length - 1) {
+                    nextVideo();
+                }
+            }, 2000);
         });
 
         // Log when video can play
