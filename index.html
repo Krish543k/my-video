@@ -566,6 +566,9 @@
                 // Load first video
                 loadVideo(0);
                 
+                // Hide overlay immediately after password
+                overlay.classList.add('hidden');
+                
                 // Start video after password
                 setTimeout(() => {
                     attemptPlay();
@@ -624,12 +627,8 @@
 
         // Try to play on page load
         window.addEventListener('load', function() {
-            console.log('Page loaded, attempting autoplay...');
-            
-            // Wait a bit for video to load
-            setTimeout(() => {
-                attemptPlay();
-            }, 500);
+            console.log('Page loaded');
+            // Don't auto-attempt play on load, wait for password
         });
 
         // Play on click
@@ -637,8 +636,9 @@
             console.log('User clicked play button');
             video.muted = false; // Unmute
             video.volume = 1.0; // Full volume
+            overlay.classList.add('hidden'); // Hide overlay first
             video.play().then(() => {
-                overlay.classList.add('hidden');
+                console.log('Playing after click');
             }).catch(error => {
                 console.error('Play error:', error);
                 errorMessage.style.display = 'block';
