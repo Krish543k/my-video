@@ -649,7 +649,7 @@
         // Show error if video fails to load
         video.addEventListener('error', function(e) {
             console.error('Video error:', e);
-            errorMessage.textContent = 'Video file nahi mili! "video.mp4" upload karein.';
+            errorMessage.textContent = `Video file nahi mili! "${videos[currentVideoIndex]}" upload karein.`;
             errorMessage.style.display = 'block';
             
             setTimeout(() => {
