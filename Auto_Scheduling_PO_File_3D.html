@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Auto Scheduling PO File</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+
+<style>
+body {
+  font-family: 'Segoe UI', sans-serif;
+  background: linear-gradient(135deg, #141e30, #243b55);
+  height: 100vh;
+  margin: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.box {
+  background: rgba(255,255,255,0.1);
+  backdrop-filter: blur(20px);
+  padding: 30px;
+  border-radius: 20px;
+  width: 420px;
+  text-align: center;
+  color: white;
+  box-shadow: 0 20px 50px rgba(0,0,0,0.5);
+  transform: perspective(1000px) rotateX(5deg);
+  transition: 0.5s;
+}
+
+.box:hover {
+  transform: perspective(1000px) rotateX(0deg) scale(1.03);
+}
+
+h2 {
+  margin-bottom: 15px;
+}
+
+.upload-area {
+  border: 2px dashed rgba(255,255,255,0.6);
+  padding: 25px;
+  border-radius: 15px;
+  cursor: pointer;
+  transition: 0.3s;
+}
+
+.upload-area:hover {
+  background: rgba(255,255,255,0.2);
+}
+
+button {
+  background: linear-gradient(45deg,#00c6ff,#0072ff);
+  border: none;
+  padding: 12px 22px;
+  border-radius: 12px;
+  margin-top: 12px;
+  cursor: pointer;
+  color: white;
+  font-weight: bold;
+  transition: 0.3s;
+  box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+}
+
+button:hover {
+  transform: translateY(-2px) scale(1.05);
+}
+
+textarea {
+  width: 100%;
+  height: 120px;
+  margin-top: 10px;
+  border-radius: 10px;
+  padding: 10px;
+  border: none;
+  outline: none;
+  resize: none;
+}
+
+.popup {
+  position: fixed;
+  top: 30px;
+  right: 30px;
+  background: linear-gradient(45deg,#00e676,#00c853);
+  color: white;
+  padding: 18px 25px;
+  border-radius: 12px;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.4);
+  display: none;
+  animation: pop3d 0.6s ease;
+}
+
+@keyframes pop3d {
+  0% {transform: scale(0.5) rotateX(30deg); opacity:0;}
+  100% {transform: scale(1) rotateX(0deg); opacity:1;}
+}
+</style>
+</head>
+
+<body>
+
+<div class="box">
+<h2>🚀 Auto Scheduling PO File</h2>
+
+<div class="upload-area" onclick="document.getElementById('upload').click()">
+📂 Upload Excel File
+<input type="file" id="upload" accept=".xls,.xlsx" hidden>
+</div>
+
+<button onclick="convert()">Convert</button>
+
+<textarea id="output" placeholder="CSV Output"></textarea>
+
+<button onclick="downloadCSV()">Download CSV</button>
+</div>
+
+<div id="popup" class="popup">✅ CSV Ready Successfully!</div>
+
+<script>
+let csvData = "";
+
+function showPopup() {
+  let popup = document.getElementById("popup");
+  popup.style.display = "block";
+  setTimeout(() => popup.style.display = "none", 3000);
+}
+
+function formatTime(value) {
+  if (!value) return "";
+
+  if (typeof value === "number") {
+    let totalSeconds = Math.round(value * 24 * 60 * 60);
+    let hours = Math.floor(totalSeconds / 3600);
+    let minutes = Math.floor((totalSeconds % 3600) / 60);
+    let seconds = totalSeconds % 60;
+
+    return (
+      String(hours).padStart(2, "0") + ":" +
+      String(minutes).padStart(2, "0") + ":" +
+      String(seconds).padStart(2, "0")
+    );
+  }
+  return value;
+}
+
+function convert() {
+  const file = document.getElementById('upload').files[0];
+  if (!file) {
+    alert("Upload file first!");
+    return;
+  }
+
+  const reader = new FileReader();
+
+  reader.onload = function(e) {
+    const data = new Uint8Array(e.target.result);
+    const workbook = XLSX.read(data, {type: 'array'});
+    const sheet = workbook.Sheets[workbook.SheetNames[0]];
+    let json = XLSX.utils.sheet_to_json(sheet);
+
+    let csv = "PO,LINE,P_VERSION,MATERIAL,DESCRIPTION,BATCH,Start Date,Start Time,End Date,End Time,Quantity,BU\n";
+
+    json.forEach(row => {
+      let newRow = [
+        row["Order"] || "",
+        row["Production Line"] || "",
+        row["P.Version"] || "",
+        row["Material"] || "",
+        row["Description"] || "",
+        row["Batch"] || "",
+        row["Start Date"] || "",
+        formatTime(row["Start Time"]),
+        row["End Date"] || "",
+        formatTime(row["End Time"]),
+        row["Planned Quantity"] || "",
+        "HDL"
+      ];
+
+      csv += newRow.join(",") + "\n";
+    });
+
+    csvData = csv;
+    document.getElementById("output").value = csv;
+    showPopup();
+  };
+
+  reader.readAsArrayBuffer(file);
+}
+
+function downloadCSV() {
+  const blob = new Blob([csvData], { type: 'text/csv' });
+  const url = URL.createObjectURL(blob);
+
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = "PO_Output.csv";
+  a.click();
+}
+</script>
+
+</body>
+</html>
